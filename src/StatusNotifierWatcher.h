@@ -10,20 +10,18 @@
 
 #include "Errors.h"
 
-namespace sdbus
-{
-    class IProxy;
+namespace sdbus {
+class IProxy;
 }
 
-class StatusNotifierWatcher
-{
-public:
+class StatusNotifierWatcher {
+  public:
     StatusNotifierWatcher();
     ~StatusNotifierWatcher();
 
     std::expected<void, Error> connect();
     std::expected<std::vector<std::string>, Error> getRegisteredStatusNotifierItemAddresses();
 
-private:
+  private:
     std::unique_ptr<sdbus::IProxy> proxy_;
 };

@@ -38,8 +38,8 @@ FetchContent_MakeAvailable(ftxui)
 find_package(sdbus-c++ REQUIRED)
 find_package(fmt REQUIRED)
 
-add_library(core STATIC src/StatusNotifierWatcher.cpp src/StatusNotifierItem.cpp)
-target_link_libraries(core SDBusCpp::sdbus-c++)
+add_library(core STATIC src/StatusNotifierWatcher.cpp src/StatusNotifierItem.cpp src/DBusMenu.cpp)
+target_link_libraries(core SDBusCpp::sdbus-c++ magic_enum)
 
 add_executable(tray-show src/tray-show.cpp)
 target_link_libraries(tray-show core cxxopts fmt)
@@ -47,4 +47,10 @@ target_link_libraries(tray-show core cxxopts fmt)
 add_executable(tray-activate src/tray-activate.cpp)
 target_link_libraries(tray-activate core cxxopts fmt)
 
-install(TARGETS tray-show tray-activate)
+add_executable(tray-navigate src/tray-navigate.cpp)
+target_link_libraries(tray-navigate core cxxopts fmt ftxui::screen ftxui::dom ftxui::component)
+
+add_executable(tray-trigger src/tray-trigger.cpp)
+target_link_libraries(tray-trigger core cxxopts fmt)
+
+install(TARGETS tray-show tray-activate tray-navigate tray-trigger)
