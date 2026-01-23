@@ -25,17 +25,13 @@ std::expected<void, Error> StatusNotifierWatcher::connect() {
     });
 }
 
-std::expected<std::vector<std::string>, Error> StatusNotifierWatcher::getRegisteredStatusNotifierItemAddresses() {
+std::expected<std::vector<std::string>, Error> StatusNotifierWatcher::getRegisteredAddresses() {
     auto result = safelyGetProperty<std::vector<std::string>>(
         proxy_, "org.kde.StatusNotifierWatcher", "RegisteredStatusNotifierItems"
     );
 
     if (result) {
-        auto addrs = std::move(result.value());
-        for (auto &addr : addrs) {
-            addr = addr.substr(0, addr.find('/'));
-        }
-        return addrs;
+        return std::move(result.value());
     } else {
         return std::unexpected(result.error());
     }

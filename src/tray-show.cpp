@@ -31,10 +31,12 @@ int main(int argc, char **argv) {
     if (auto connRes = watcher.connect(); !connRes)
         exitWithMsg("Could not connect to the StatusNotifierWatcher with error: " + connRes.error().show(), -1);
 
-    if (auto maybeAddrs = watcher.getRegisteredStatusNotifierItemAddresses()) {
-        for (const auto &addr : maybeAddrs.value()) {
+    if (auto maybeAddrs = watcher.getRegisteredAddresses()) {
+        for (const auto &fullAddr : maybeAddrs.value()) {
+            auto [addr, path] = splitAddress(fullAddr);
             fmt::printf("Address: %s\n", addr);
-            StatusNotifierItem item(addr);
+            fmt::printf("Path: %s\n", path);
+            StatusNotifierItem item(addr, path);
             if (auto connRes = item.connect()) {
                 ifExpected(item.getCategory(), [](const std::string &category) {
                     fmt::printf("Category: %s\n", category);
@@ -85,7 +87,7 @@ int main(int argc, char **argv) {
                     });
                 }
             } else {
-                std::cerr << "Could not connect to the StatusNotifierItem on address: " << addr
+                std::cerr << "Could not connect to the StatusNotifierItem on address: " << fullAddr
                           << " with error: " << connRes.error().show() << '\n';
             }
 

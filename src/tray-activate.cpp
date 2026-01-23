@@ -46,9 +46,10 @@ int main(int argc, char **argv) {
     if (auto connRes = watcher.connect(); !connRes)
         exitWithMsg("Could not connect to the StatusNotifierWatcher with error: " + connRes.error().show(), -1);
 
-    if (auto maybeAddrs = watcher.getRegisteredStatusNotifierItemAddresses()) {
-        for (const auto &addr : maybeAddrs.value()) {
-            StatusNotifierItem item(addr);
+    if (auto maybeAddrs = watcher.getRegisteredAddresses()) {
+        for (const auto &fullAddr : maybeAddrs.value()) {
+            auto [addr, path] = splitAddress(fullAddr);
+            StatusNotifierItem item(addr, path);
             if (!item.connect())
                 continue;
 

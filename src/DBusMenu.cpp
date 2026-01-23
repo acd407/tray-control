@@ -296,11 +296,12 @@ void DBusMenu::registerSignalHandlers() {
 }
 
 // 递归解析布局项
-MenuLayoutItem DBusMenu::parseLayout(const sdbus::Struct<int32_t, MenuPropertyMap, std::vector<sdbus::Variant>> &layout) {
+MenuLayoutItem
+DBusMenu::parseLayout(const sdbus::Struct<int32_t, MenuPropertyMap, std::vector<sdbus::Variant>> &layout) {
     MenuLayoutItem item;
     item.id = std::get<0>(layout);
     item.properties = std::get<1>(layout);
-    
+
     // 递归解析子菜单项
     const auto &children = std::get<2>(layout);
     for (const auto &childVariant : children) {
@@ -309,6 +310,6 @@ MenuLayoutItem DBusMenu::parseLayout(const sdbus::Struct<int32_t, MenuPropertyMa
         MenuLayoutItem childItem = parseLayout(childLayout);
         item.children.push_back(childItem);
     }
-    
+
     return item;
 }

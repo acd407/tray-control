@@ -21,14 +21,14 @@ bool findMenuItem(const MenuLayoutItem &item, int32_t targetId, int32_t &foundId
         foundId = item.id;
         return true;
     }
-    
+
     // 递归查找子菜单项
     for (const auto &child : item.children) {
         if (findMenuItem(child, targetId, foundId)) {
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -44,16 +44,19 @@ void printMenuItems(const MenuLayoutItem &item, int indent = 0) {
 
     // 打印菜单项属性
     for (const auto &[key, value] : item.properties) {
-        std::visit([&key](auto &&arg) {
-            using T = std::decay_t<decltype(arg)>;
-            if constexpr (std::is_same_v<T, std::string>) {
-                fmt::printf(", %s: %s", key, arg);
-            } else if constexpr (std::is_same_v<T, bool>) {
-                fmt::printf(", %s: %s", key, arg ? "true" : "false");
-            } else if constexpr (std::is_same_v<T, int32_t>) {
-                fmt::printf(", %s: %d", key, arg);
-            }
-        }, value);
+        std::visit(
+            [&key](auto &&arg) {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, std::string>) {
+                    fmt::printf(", %s: %s", key, arg);
+                } else if constexpr (std::is_same_v<T, bool>) {
+                    fmt::printf(", %s: %s", key, arg ? "true" : "false");
+                } else if constexpr (std::is_same_v<T, int32_t>) {
+                    fmt::printf(", %s: %d", key, arg);
+                }
+            },
+            value
+        );
     }
 
     std::cout << std::endl;
@@ -66,15 +69,10 @@ void printMenuItems(const MenuLayoutItem &item, int indent = 0) {
 
 int main(int argc, char **argv) {
     cxxopts::Options optionsDecl("tray-trigger", "Trigger a menu item of a system tray item");
-    optionsDecl.add_options()("h,help", "Print help and exit", cxxopts::value<bool>()->default_value("false"))(
-        "i,id", "Find items by id", cxxopts::value<std::string>()
-    )(
-        "t,title", "Find items by title", cxxopts::value<std::string>()
-    )(
-        "m,menu-id", "Menu item ID to click", cxxopts::value<int32_t>()
-    )(
-        "l,list", "List menu items instead of clicking", cxxopts::value<bool>()->default_value("false")
-    );
+    optionsDecl
+        .add_options()("h,help", "Print help and exit", cxxopts::value<bool>()->default_value("false"))("i,id", "Find items by id", cxxopts::value<std::string>())("t,title", "Find items by title", cxxopts::value<std::string>())("m,menu-id", "Menu item ID to click", cxxopts::value<int32_t>())(
+            "l,list", "List menu items instead of clicking", cxxopts::value<bool>()->default_value("false")
+        );
 
     const auto options = optionsDecl.parse(argc, argv);
     if (options["help"].as<bool>()) {
@@ -93,7 +91,7 @@ int main(int argc, char **argv) {
         title = options["title"].as<std::string>();
 
     const bool listMode = options["list"].as<bool>();
-    
+
     std::optional<int32_t> menuId;
     if (!listMode && options.count("menu-id") == 0) {
         exitWithMsg("Please specify menu item ID to click (or use --list to list menu items)", 0);
@@ -105,9 +103,10 @@ int main(int argc, char **argv) {
     if (auto connRes = watcher.connect(); !connRes)
         exitWithMsg("Could not connect to the StatusNotifierWatcher with error: " + connRes.error().show(), -1);
 
-    if (auto maybeAddrs = watcher.getRegisteredStatusNotifierItemAddresses()) {
-        for (const auto &addr : maybeAddrs.value()) {
-            StatusNotifierItem item(addr);
+    if (auto maybeAddrs = watcher.getRegisteredAddresses()) {
+        for (const auto &fullAddr : maybeAddrs.value()) {
+            auto [addr, path] = splitAddress(fullAddr);
+            StatusNotifierItem item(addr, path);
             if (!item.connect())
                 continue;
 
@@ -129,19 +128,14 @@ int main(int argc, char **argv) {
             if (found) {
                 // 获取菜单路径
                 std::string menuPath;
-                ifExpected(item.getMenu(), [&menuPath](const sdbus::ObjectPath &path) {
-                    menuPath = path;
-                });
+                ifExpected(item.getMenu(), [&menuPath](const sdbus::ObjectPath &path) { menuPath = path; });
 
                 // 添加调试信息
                 fmt::printf("Menu path: %s\n", menuPath);
 
                 if (!menuPath.empty()) {
-                    // 获取服务名称
-                    std::string serviceName = addr;  // 地址已经是服务名称，不需要再处理
-
                     // 创建DBusMenu对象
-                    DBusMenu dbusMenu(serviceName, menuPath);
+                    DBusMenu dbusMenu(addr, menuPath);
                     if (auto connRes = dbusMenu.connect()) {
                         // 获取版本
                         ifExpected(dbusMenu.getVersion(), [](uint32_t version) {
@@ -157,7 +151,7 @@ int main(int argc, char **argv) {
                         ifExpected(dbusMenu.getLayout(0, -1), [listMode, menuId, &dbusMenu](const auto &layoutResult) {
                             const auto &[revision, rootItem] = layoutResult;
                             fmt::printf("Menu revision: %d\n", revision);
-                            
+
                             if (listMode) {
                                 fmt::printf("Menu items:\n");
                                 printMenuItems(rootItem);
@@ -166,14 +160,16 @@ int main(int argc, char **argv) {
                                 int32_t foundId = -1;
                                 if (findMenuItem(rootItem, *menuId, foundId)) {
                                     fmt::printf("Found menu item with ID: %d\n", foundId);
-                                    
+
                                     // 发送点击事件
                                     std::variant<bool, int32_t, std::string> data = static_cast<int32_t>(0);
                                     if (auto clickRes = dbusMenu.sendEvent(foundId, "clicked", data, 0)) {
                                         fmt::printf("Successfully clicked menu item with ID: %d\n", foundId);
                                     } else {
-                                        fmt::printf("Failed to click menu item with ID: %d, error: %s\n", 
-                                                  foundId, clickRes.error().show().c_str());
+                                        fmt::printf(
+                                            "Failed to click menu item with ID: %d, error: %s\n", foundId,
+                                            clickRes.error().show().c_str()
+                                        );
                                     }
                                 } else {
                                     fmt::printf("Menu item with ID: %d not found\n", *menuId);
@@ -186,7 +182,7 @@ int main(int argc, char **argv) {
                 } else {
                     std::cerr << "No menu available for this item\n";
                 }
-                
+
                 // 找到了匹配项，退出循环
                 break;
             }

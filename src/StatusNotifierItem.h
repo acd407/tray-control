@@ -14,6 +14,19 @@ namespace sdbus {
 class IProxy;
 }
 
+// 辅助函数，用于解析 StatusNotifierItem 地址
+inline std::pair<std::string, std::string> splitAddress(const std::string &address) {
+    size_t slashPos = address.find('/');
+    if (slashPos == std::string::npos) {
+        // 没有路径部分，使用默认路径
+        return {address, "/StatusNotifierItem"};
+    }
+
+    std::string service = address.substr(0, slashPos);
+    std::string path = address.substr(slashPos);
+    return {service, path};
+}
+
 class StatusNotifierItem {
   public:
     // 工具提示结构体，对应(sa(iiay)ss)
@@ -23,7 +36,7 @@ class StatusNotifierItem {
         std::string description;
     };
 
-    StatusNotifierItem(std::string_view destination);
+    StatusNotifierItem(std::string_view destination, std::string_view objectPath);
     ~StatusNotifierItem();
 
     std::expected<void, Error> connect();
@@ -85,4 +98,5 @@ class StatusNotifierItem {
   private:
     std::unique_ptr<sdbus::IProxy> proxy_;
     std::string_view destination_;
+    std::string objectPath_;
 };

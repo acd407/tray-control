@@ -20,7 +20,7 @@ class StatusNotifierWatcher {
     ~StatusNotifierWatcher();
 
     std::expected<void, Error> connect();
-    std::expected<std::vector<std::string>, Error> getRegisteredStatusNotifierItemAddresses();
+    std::expected<std::vector<std::string>, Error> getRegisteredAddresses();
 
   private:
     std::unique_ptr<sdbus::IProxy> proxy_;

@@ -11,7 +11,8 @@ template <typename T>
 static constexpr auto safelyGetSNIProperty =
     std::bind(safelyGetProperty<T>, std::placeholders::_1, "org.kde.StatusNotifierItem", std::placeholders::_2);
 
-StatusNotifierItem::StatusNotifierItem(std::string_view destination) : destination_(destination) {}
+StatusNotifierItem::StatusNotifierItem(std::string_view destination, std::string_view objectPath)
+    : destination_(destination), objectPath_(objectPath) {}
 
 StatusNotifierItem::~StatusNotifierItem() = default;
 
@@ -19,7 +20,7 @@ std::expected<void, Error> StatusNotifierItem::connect() {
     return safelyExec([this] -> std::expected<void, Error> {
         proxy_ = sdbus::createProxy(
             sdbus::createSessionBusConnection(), sdbus::ServiceName{std::string(destination_)},
-            sdbus::ObjectPath{"/StatusNotifierItem"}
+            sdbus::ObjectPath{objectPath_}
         );
         if (proxy_)
             return {};
@@ -65,8 +66,8 @@ std::expected<std::string, Error> StatusNotifierItem::getAttentionMovieName() {
 }
 
 std::expected<std::string, Error> StatusNotifierItem::getToolTip() const {
-        return safelyGetSNIProperty<std::string>(proxy_, "ToolTip");
-    }
+    return safelyGetSNIProperty<std::string>(proxy_, "ToolTip");
+}
 
 std::expected<std::string, Error> StatusNotifierItem::getIconThemePath() {
     return safelyGetSNIProperty<std::string>(proxy_, "IconThemePath");
