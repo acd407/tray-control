@@ -124,7 +124,7 @@ Usage:
 检出仓库并使用[makepkg](https://wiki.archlinux.org/title/makepkg)：
 
 ```shell
-git checkout https://github.com/andrewerf/tray-control.git
+git checkout https://github.com/acd407/tray-control.git
 cd tray-control
 makepkg -si
 ```
@@ -136,7 +136,7 @@ makepkg -si
 检出仓库并使用cmake + make构建：
 
 ```shell
-git checkout https://github.com/andrewerf/tray-control.git
+git checkout https://github.com/acd407/tray-control.git
 cd tray-control
 mkdir build
 cd build

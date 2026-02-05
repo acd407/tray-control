@@ -90,7 +90,6 @@ int main(int argc, char **argv) {
     }
 
     std::string id, title, addr, path;
-    bool found = false;
 
     auto countId = options.count("id");
     auto countTitle = options.count("title");
@@ -101,7 +100,6 @@ int main(int argc, char **argv) {
     if (countAddr && countPath) {
         addr = options["addr"].as<std::string>();
         path = options["path"].as<std::string>();
-        found = true;
     }
     // 错误情况：只提供了addr或path中的一个
     else if (countAddr || countPath) {
@@ -109,7 +107,7 @@ int main(int argc, char **argv) {
     }
     // 传统搜索模式：使用id或title
     else if (countId || countTitle) {
-        if (countId && countTitle || !countId && !countTitle) {
+        if ((countId && countTitle) || (!countId && !countTitle)) {
             exitWithMsg("Please specify either id or title (and not both)", 0);
         }
 
@@ -152,6 +150,7 @@ int main(int argc, char **argv) {
 
             if (found) {
                 service = itemAddr;
+                path = itemPath;  // Store the actual item path
                 foundTarget = true;
                 break; // 找到匹配项后立即退出循环
             }
@@ -160,9 +159,9 @@ int main(int argc, char **argv) {
 
     // 统一处理找到的目标项
     if (foundTarget) {
-        StatusNotifierItem item(service, !path.empty() ? path : "");
-        if (!path.empty() && !item.connect()) {
-            exitWithMsg("Could not connect to the StatusNotifierItem at " + service + ":" + path, -1);
+        StatusNotifierItem item(service, !path.empty() ? path : "/StatusNotifierItem");
+        if (!item.connect()) {
+            exitWithMsg("Could not connect to the StatusNotifierItem at " + service + ":" + (!path.empty() ? path : "/StatusNotifierItem"), -1);
         }
 
         // 获取菜单路径
@@ -259,6 +258,8 @@ int main(int argc, char **argv) {
                         std::variant<bool, int32_t, std::string> data = static_cast<int32_t>(0);
                         if (auto clickRes = dbusMenu.sendEvent(menuIds[selected], "clicked", data, 0)) {
                             statusMessage = "已点击菜单项: " + menuItems[selected].label;
+                            // 成功点击菜单项后自动退出
+                            screen.ExitLoopClosure()();
                         } else {
                             statusMessage = "点击菜单项失败: " + clickRes.error().show();
                         }
