@@ -4,63 +4,72 @@
 
 ## 工具概述
 
-该项目包含四个命令行工具：
+该项目包含三个命令行工具：
 
-- `tray-show`: 显示系统托盘中的所有项目
-- `tray-activate`: 激活系统托盘中的项目
+- `tray-trigger`: 主要工具，用于显示、激活系统托盘项目或触发其菜单项
 - `tray-navigate`: 交互式导航系统托盘项目的菜单
-- `tray-trigger`: 触发系统托盘项目的特定菜单项
+- `tray-show` 和 `tray-activate` 的功能现已整合到 `tray-trigger` 中
 
 ## 使用方法
 
-### tray-show
+### tray-trigger
 
-显示系统托盘中的所有项目：
-
-```shell
-$ tray-show -h
-Show items in the system tray
-Usage:
-  tray-show [OPTION...]
-
-  -h, --help     Print help and exit
-  -v, --verbose  Show full info about each item
-```
-
-示例输出：
-```
-$ tray-show -v
-Category: ApplicationStatus
-Title: TelegramDesktop
-Id: TelegramDesktop
-Status: Active
-IconName: 
-
-Category: ApplicationStatus
-Title: Fleep
-Id: Fleep
-Status: Active
-IconName: 
-```
-
-### tray-activate
-
-激活系统托盘中的项目：
+统一的系统托盘操作工具，可以显示、激活系统托盘项目或触发其菜单项：
 
 ```shell
-$ tray-activate -h
-Activate items from the system tray
+$ tray-trigger -h
+Interact with system tray items (show, activate, or trigger menu items)
 Usage:
-  tray-activate [OPTION...]
+  tray-trigger [OPTION...]
 
   -h, --help       Print help and exit
   -i, --id arg     Find items by id
   -t, --title arg  Find items by title
-  -x arg           X coord (default: 0)
-  -y arg           Y coord (default: 0)
+  -a, --addr arg   Directly specify the address of the item
+  -p, --path arg   Directly specify the path of the item
+  -m, --menu-id    Menu item ID to click
+  -l, --list       List menu items instead of clicking
+  -s, --show       Show all system tray items (equivalent to tray-show)
+  --activate       Activate the system tray item (equivalent to tray-activate)
+  -x arg           X coordinate for activation (default: 0)
+  -y arg           Y coordinate for activation (default: 0)
+  -v, --verbose    Show full info about each item (when using --show)
 ```
 
-注意：必须指定id或title中的一个（但不能同时指定）。`-x`和`-y`参数是传递给激活调用的坐标，系统托盘项目应该考虑这些坐标来显示子菜单或其他内容（但通常应用程序会忽略它们）。
+#### 显示所有系统托盘项目 (原tray-show功能)
+
+使用 `--show` 或 `-s` 参数显示所有系统托盘项目：
+
+```shell
+$ tray-trigger --show -v
+```
+
+这相当于原来的 `tray-show -v` 命令。
+
+#### 激活系统托盘项目 (原tray-activate功能)
+
+使用 `--activate` 参数激活特定的系统托盘项目：
+
+```shell
+$ tray-trigger --activate --title "MyApp"
+$ tray-trigger --activate --id "my-app-id" -x 100 -y 200
+```
+
+这相当于原来的 `tray-activate` 命令。
+
+#### 触发菜单项 (原tray-trigger功能)
+
+使用 `--list` 选项列出所有菜单项及其ID，然后使用 `--menu-id` 指定要点击的菜单项ID：
+
+```shell
+$ tray-trigger --title "MyApp" --list
+Menu items:
+ID: 1, label: Preferences, enabled: true
+ID: 2, label: Settings, enabled: true
+ID: 3, label: Exit, enabled: true
+
+$ tray-trigger --title "MyApp" --menu-id 3
+```
 
 ### tray-navigate
 

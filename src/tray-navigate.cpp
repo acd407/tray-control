@@ -150,7 +150,7 @@ int main(int argc, char **argv) {
 
             if (found) {
                 service = itemAddr;
-                path = itemPath;  // Store the actual item path
+                path = itemPath; // Store the actual item path
                 foundTarget = true;
                 break; // 找到匹配项后立即退出循环
             }
@@ -161,7 +161,11 @@ int main(int argc, char **argv) {
     if (foundTarget) {
         StatusNotifierItem item(service, !path.empty() ? path : "/StatusNotifierItem");
         if (!item.connect()) {
-            exitWithMsg("Could not connect to the StatusNotifierItem at " + service + ":" + (!path.empty() ? path : "/StatusNotifierItem"), -1);
+            exitWithMsg(
+                "Could not connect to the StatusNotifierItem at " + service + ":" +
+                    (!path.empty() ? path : "/StatusNotifierItem"),
+                -1
+            );
         }
 
         // 获取菜单路径

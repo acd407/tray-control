@@ -108,8 +108,6 @@ function(add_tray_executable name source)
 endfunction()
 
 # 添加各个工具
-add_tray_executable(tray-show src/tray-show.cpp)
-add_tray_executable(tray-activate src/tray-activate.cpp)
 add_tray_executable(tray-trigger src/tray-trigger.cpp)
 
 # 特殊处理tray-navigate，因为它需要额外的ftxui库
@@ -129,6 +127,21 @@ add_custom_target(clean-all
     COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/CMakeCache.txt
     COMMENT "Cleaning all build files and dependencies"
 )
+
+# 添加rofi菜单脚本到发布包（如果存在）
+if(EXISTS ${CMAKE_SOURCE_DIR}/tray-rofi-menu.sh)
+    configure_file(
+        ${CMAKE_SOURCE_DIR}/tray-rofi-menu.sh
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/tray-rofi-menu.sh
+        COPYONLY
+    )
+    
+    # 安装脚本
+    install(PROGRAMS ${CMAKE_SOURCE_DIR}/tray-rofi-menu.sh
+        DESTINATION bin
+        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+    )
+endif()
 
 # 打印配置信息
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
