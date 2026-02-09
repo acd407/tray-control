@@ -91,6 +91,7 @@ int main(int argc, char **argv) {
         ("l,list", "List menu items instead of clicking", cxxopts::value<bool>()->default_value("false"))
         ("s,show", "Show all system tray items (equivalent to tray-show)", cxxopts::value<bool>()->default_value("false"))
         ("activate", "Activate the system tray item (equivalent to tray-activate)", cxxopts::value<bool>()->default_value("false"))
+        ("context-menu", "Trigger the context menu of the system tray item", cxxopts::value<bool>()->default_value("false"))
         ("x", "X coordinate for activation (default: 0)", cxxopts::value<int>()->default_value("0"))
         ("y", "Y coordinate for activation (default: 0)", cxxopts::value<int>()->default_value("0"))
         ("v,verbose", "Show full info about each item (when using --show)", cxxopts::value<bool>()->default_value("false"));
@@ -106,6 +107,7 @@ int main(int argc, char **argv) {
     // 获取各种模式的标志
     const bool showMode = options["show"].as<bool>();
     const bool activateMode = options["activate"].as<bool>();
+    const bool contextMenuMode = options["context-menu"].as<bool>();
     const bool listMode = options["list"].as<bool>();
     const bool verboseOutput = options["verbose"].as<bool>();
     const int x = options["x"].as<int>();
@@ -148,11 +150,11 @@ int main(int argc, char **argv) {
         }
 
         // 对于非show模式，检查是否需要菜单ID
-        if (!activateMode && !listMode) {
+        if (!activateMode && !contextMenuMode && !listMode) {
             if (options.count("menu-id") == 0) {
                 exitWithMsg(
                     "Please specify menu item ID to click (or use --list to list menu items, --activate to activate "
-                    "the item, or --show to list all items)",
+                    "the item, --context-menu to trigger context menu, or --show to list all items)",
                     0
                 );
             }
@@ -289,6 +291,9 @@ int main(int argc, char **argv) {
             if (activateMode) {
                 // 执行激活操作 (tray-activate 功能)
                 fmt::printf("Activation %s\n", item.activate(x, y) ? "succeeded" : "failed");
+            } else if (contextMenuMode) {
+                // 执行上下文菜单操作
+                fmt::printf("Context menu %s\n", item.contextMenu(x, y) ? "succeeded" : "failed");
             } else {
                 // 获取菜单路径并处理菜单项
                 std::string menuPath;
